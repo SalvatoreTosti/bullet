@@ -9,11 +9,21 @@
   [& args]
   (println "Hello, World!"))
 
+(defn day-of-week-string [x]
+  (cond
+   (= x 1) "Monday"
+   (= x 2) "Tuesday"
+   (= x 3) "Wednesday"
+   (= x 4) "Thursday"
+   (= x 5) "Friday"
+   (= x 6) "Saturday"
+   (= x 7) "Sunday"
+   :else "Unknown"))
+
 ;entry
 ;  task
 ;  note
 ;  event
-
 
 (defn task []
   {:type :task :title "I'm a task" :due-date nil :done false})
@@ -23,13 +33,13 @@
   {:type :event :title "I'm an event" :date nil })
 
 (defn future-log []
-  {:year 2017 :months {:august nil :september nil}})
+  {:type :future :year 2017 :months [{:name "August" :entries [(task) (note) (event)]} {:name "September" :entries [(task) (note) (event)]}]})
 
 (defn monthly-log []
-  {:month "August" :year 2017 :entries []})
+  {:type :monthly :month "August" :year 2017 :entries [(task) (note) (event)]})
 
 (defn daily-log []
-  {:date (clj-time/today) :entries [(task) (note) (event)]})
+  {:type :daily :date (clj-time/today) :entries [(task) (note) (event)]})
 
 (defn test-index []
   {:future-log (future-log)
@@ -37,14 +47,14 @@
    :daily-log (daily-log)
    :collections {}})
 
-(defn view-task [task]
+(defn- view-task [task]
   (if (:done task) (println "x " (:title task))
     (println "* " (:title task))))
 
-(defn view-note [note]
+(defn- view-note [note]
   (println "- "(:title note)))
 
-(defn view-event [event]
+(defn- view-event [event]
   (println "o " (:title event)))
 
 (defmulti view-entry
@@ -58,5 +68,31 @@
 (defmethod view-entry :default [entry]
   (println "? " (:title entry)))
 
-(defn view-daily-log [daily-log]
-  (doall (map view-entry (daily-log :entries))))
+(defn- view-daily-log [log]
+  (println (day-of-week-string
+            (clj-time/day-of-week
+             (log :date)))
+           (.toString
+            (log :date)))
+  (doall (map view-entry (log :entries))))
+
+(defn- view-monthly-log [log]
+  (println (log :month) (log :year))
+  (doall (map view-entry (log :entries))))
+
+(defn- future-log-print-month [month]
+  (println (:name month))
+   (doall (map view-entry (month :entries))))
+
+(defn view-future-log [log]
+  (println (log :year))
+  (doall (map future-log-print-month (:months log))))
+
+(defmulti view-log
+  (fn[log] (log :type)))
+(defmethod view-log :daily [log]
+  (view-daily-log log))
+(defmethod view-log :monthly [log]
+  (view-monthly-log log))
+(defmethod view-log :future [log]
+  (view-future-log log))
