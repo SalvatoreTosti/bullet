@@ -1,8 +1,6 @@
 (ns bullet.core
   (:gen-class)
-  (:require [lanterna.screen :as s]
-            [lanterna.terminal :as t]
-            [clj-time.core :as clj-time]))
+  (:require [clj-time.core :as clj-time]))
 
 (defn -main
   "I don't do a whole lot ... yet."
@@ -20,17 +18,34 @@
    (= x 7) "Sunday"
    :else "Unknown"))
 
+(def id (atom 1))
+(defn show-id []
+  (deref id))
+(defn next-id []
+  (swap! id inc))
+
 ;entry
 ;  task
 ;  note
 ;  event
 
-(defn task []
-  {:type :task :title "I'm a task" :due-date nil :done false})
-(defn note []
-  {:type :note :title "I'm a note"})
-(defn event []
-  {:type :event :title "I'm an event" :date nil })
+(defn task
+  ([title due-date]
+   {:id (next-id) :type :task :title title :due-date due-date :done false})
+  ([]
+   (task "I'm a task" nil)))
+
+(defn note
+  ([title]
+   {:id (next-id) :type :note :title title})
+  ([]
+   (note "I'm a note")))
+
+(defn event
+  ([title date]
+   {:id (next-id) :type :event :title title :date date })
+  ([]
+   (event "I'm an event" nil)))
 
 (defn future-log []
   {:type :future :year 2017 :months [{:name "August" :entries [(task) (note) (event)]} {:name "September" :entries [(task) (note) (event)]}]})
@@ -84,7 +99,7 @@
   (println (:name month))
    (doall (map view-entry (month :entries))))
 
-(defn view-future-log [log]
+(defn- view-future-log [log]
   (println (log :year))
   (doall (map future-log-print-month (:months log))))
 
@@ -96,3 +111,6 @@
   (view-monthly-log log))
 (defmethod view-log :future [log]
   (view-future-log log))
+
+(defn add-entry [log entry]
+           (update log :entries #(conj % entry)))
