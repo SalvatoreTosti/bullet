@@ -2,11 +2,6 @@
   (:gen-class)
   (:require [clj-time.core :as clj-time]))
 
-(defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (println "Hello, World!"))
-
 (defn day-of-week-string [x]
   (cond
    (= x 1) "Monday"
@@ -63,14 +58,14 @@
    :collections {}})
 
 (defn- view-task [task]
-  (if (:done task) (println "x " (:title task))
-    (println "* " (:title task))))
+  (if (task :done) (println "x " (task :title))
+    (println "* " (task :title))))
 
 (defn- view-note [note]
-  (println "- "(:title note)))
+  (println "- "(note :title )))
 
 (defn- view-event [event]
-  (println "o " (:title event)))
+  (println "o " (event :title)))
 
 (defmulti view-entry
   (fn[entry] (entry :type)))
@@ -81,7 +76,7 @@
 (defmethod view-entry :event [entry]
   (view-event entry))
 (defmethod view-entry :default [entry]
-  (println "? " (:title entry)))
+  (println "? " (entry :title)))
 
 (defn- view-daily-log [log]
   (println (day-of-week-string
@@ -96,12 +91,12 @@
   (doall (map view-entry (log :entries))))
 
 (defn- future-log-print-month [month]
-  (println (:name month))
+  (println (month :name ))
    (doall (map view-entry (month :entries))))
 
 (defn- view-future-log [log]
   (println (log :year))
-  (doall (map future-log-print-month (:months log))))
+  (doall (map future-log-print-month (log :months ))))
 
 (defmulti view-log
   (fn[log] (log :type)))
@@ -114,3 +109,32 @@
 
 (defn add-entry [log entry]
            (update log :entries #(conj % entry)))
+
+
+(defmulti execute-command
+  (fn [mode & args] mode))
+(defmethod execute-command :view [& args]
+  (let [view-type (second args)]
+    ;(process-sub-arg view-type)
+    (cond
+     (= :daily view-type) (view-daily-log (daily-log)))
+
+  ))
+
+(defmulti process-sub-arg
+  (fn [mode & args] mode))
+(defmethod process-sub-arg :view [mode args]
+  (cond
+   (= (first args) "daily") :daily))
+
+
+(defn sub-command-dispatch [command args]
+  (cond
+   (=  command "view") (process-sub-arg :view args)
+   :else :unknown))
+
+(defn -main
+  [& args]
+  (sub-command-dispatch (first args) (rest args)))
+
+(-main "view" "daily")
